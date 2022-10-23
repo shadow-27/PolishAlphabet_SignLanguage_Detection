@@ -1,0 +1,1 @@
+# PolishAlphabet_SignLanguage_Detection
