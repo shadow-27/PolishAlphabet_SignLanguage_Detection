@@ -4,8 +4,9 @@
 
 
  The dataset for these projects are collected manullay:
- *The [Video Dataset](https://drive.google.com/drive/folders/1hPjFmoKxd5XTXEyzl2BB0ROxzfe374Yo?usp=share_link)
- *The [Image Dataset](https://drive.google.com/drive/folders/1EIy9f9ZNaFeWxCJqF8Qtis9AvygJt2CR?usp=sharing) where the frames are extracted from videos where the user is perfoming a sign gesture.
+ -The [Video Dataset](https://drive.google.com/drive/folders/1hPjFmoKxd5XTXEyzl2BB0ROxzfe374Yo?usp=share_link)
+ 
+ -The [Image Dataset](https://drive.google.com/drive/folders/1EIy9f9ZNaFeWxCJqF8Qtis9AvygJt2CR?usp=sharing) where the frames are extracted from videos where the user is perfoming a sign gesture.
 
 
 
