@@ -10,7 +10,9 @@
  -The [Image Dataset](https://drive.google.com/drive/folders/1EIy9f9ZNaFeWxCJqF8Qtis9AvygJt2CR?usp=sharing) where the frames are extracted from videos where the user is perfoming a sign gesture.
  
  - The dataset for both left and right hand. Users were performing gestures, which afterwards were augmented.
+ 
  Left: https://drive.google.com/drive/folders/1LebX1qNjWrUKjb_Mq6D-FEOIRDCiVZsk?usp=share_link
+ 
  Right: https://drive.google.com/drive/folders/1BwGGTeKGaJp1tccPK-OJh8eY_9Bln9bn?usp=share_link
 
 
