@@ -2,7 +2,12 @@ import tkinter as tk
 import cv2
 from PIL import Image, ImageTk
 import keyboard
-import enchant
+# import enchant
+# d = enchant.Dict("en_US")
+
+from hunspell import Hunspell
+
+h = Hunspell('en_GB')
 
 import csv
 import copy
@@ -32,11 +37,12 @@ BODY_FONT = ('Courier New', 14)
 BUTTON_FONT = ('Courier New', 10)
 PLACEHOLDER_WIDTH = 27
 HEIGHT_GAP = 2
+SUGGESTED_WORD_NUMBER = 5
 
 cancel = False
 use_brect = True
 mode = 0
-d = enchant.Dict("en_US")
+button_dict = {}
 
 # Model load
 mp_hands = mp.solutions.hands
@@ -76,68 +82,127 @@ point_history = deque(maxlen=history_length)
 # Finger gesture history
 finger_gesture_history = deque(maxlen=history_length)
 
-root = tk.Tk()
-root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
-root.resizable(width=False, height=False)
-root.bind('<Escape>', lambda e: root.quit())
-root.title("Polish Sign Language Detection App")
-root.iconbitmap("images/icon.ico")
 
-# Create panedWindow
-mainPanel = tk.PanedWindow(root, orient=tk.HORIZONTAL, bg=BACKGROUND_COLOR, borderwidth=5)
-mainPanel.pack(fill=tk.BOTH, expand=True)
+# word callback
+def wordCallback(buttonText, wordText, sentence):
+    clearCallback(wordText, sentence)
+    sentence.configure(state='normal')
+    sentence.insert(tk.END, buttonText)
+    sentence.configure(state='disabled')
 
-# Left Panel
-leftPanel = tk.Label(mainPanel, anchor=tk.N)
 
-mainPanel.paneconfigure(leftPanel, minsize=LEFT_PANEL_WIDTH)
-mainPanel.add(leftPanel)
 
-# Webcam video display
-label = tk.Label(leftPanel, anchor=tk.CENTER, bg=CONTRAST_COLOR)
-label.grid(row=0, column=0)
-cap = cv2.VideoCapture(0)
+# clear callback
+def clearCallback(wordText, sentence):
+    wordText.configure(state='normal')
+    wordText.delete('1.0', tk.END)
+    wordText.configure(state='disabled')
 
-# Right Panel
-rightPanel = tk.PanedWindow(mainPanel, orient=tk.VERTICAL)
-mainPanel.paneconfigure(rightPanel, minsize=RIGHT_PANEL_WIDTH)
-mainPanel.add(rightPanel)
+    readSentence = sentence.get("1.0", 'end-1c')
+    index = readSentence.rfind(" ")
+    if index != -1:
+        sentenceStr = readSentence[:index + 1]
+        sentence.configure(state='normal')
+        sentence.delete('1.0', tk.END)
+        sentence.insert('1.0', sentenceStr)
+        sentence.configure(state='disabled')
+    else:
+        sentence.configure(state='normal')
+        sentence.delete('1.0', tk.END)
+        sentence.configure(state='disabled')
 
-rightPanelTopFrame = tk.Frame(rightPanel, bg=BACKGROUND_COLOR)
-tk.Label(rightPanelTopFrame, text="OUTPUT", anchor=tk.N, bg=BACKGROUND_COLOR, fg=FONT_COLOR, font=HEADING_FONT).pack()
-tk.Label(rightPanelTopFrame, text="", anchor=tk.N, bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
-# tk.Label(rightPanelTopFrame, text="RECOGNIZED LETTER", anchor=tk.N, bg=BACKGROUND_COLOR, fg=FONT_COLOR,
-#          font=BODY_FONT).pack()
-# letterText = tk.Text(rightPanelTopFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
-#                      font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=1)
-# letterText.pack()
-rightPanel.paneconfigure(rightPanelTopFrame, minsize=50)
-rightPanel.add(rightPanelTopFrame)
 
-rightPanelBottomFrame = tk.Frame(rightPanel, bg=BACKGROUND_COLOR)
-tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
-tk.Label(rightPanelBottomFrame, text="WORDS FORMED", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
-         font=BODY_FONT).pack()
-wordText = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
-                   font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=6)
-wordText.pack()
-tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
-tk.Label(rightPanelBottomFrame, text="SUGGESTED WORDS", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
-         font=BODY_FONT).pack()
-suggestedWordText = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
-                            font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=5)
-suggestedWordText.pack()
-rightPanel.paneconfigure(rightPanelBottomFrame, minsize=448)
-rightPanel.add(rightPanelBottomFrame)
+
+# space callback
+def spaceCallback(wordText, sentence):
+    sentence.configure(state='normal')
+    sentence.insert(tk.END, " ")
+    sentence.configure(state='disabled')
+
+    wordText.configure(state='normal')
+    wordText.delete('1.0', tk.END)
+    wordText.configure(state='disabled')
+    print("Space")
+
+
+# create window
+def create_window():
+    root = tk.Tk()
+    root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+    root.resizable(width=False, height=False)
+    root.bind('<Escape>', lambda e: root.quit())
+    root.title("Polish Sign Language Detection App")
+    root.iconbitmap("images/icon.ico")
+
+    # Create panedWindow
+    mainPanel = tk.PanedWindow(root, orient=tk.HORIZONTAL, bg=BACKGROUND_COLOR, borderwidth=5)
+    mainPanel.pack(fill=tk.BOTH, expand=True)
+
+    # Left Panel
+    leftPanel = tk.Label(mainPanel, anchor=tk.N)
+
+    mainPanel.paneconfigure(leftPanel, minsize=LEFT_PANEL_WIDTH)
+    mainPanel.add(leftPanel)
+
+    # Webcam video display
+    label = tk.Label(leftPanel, anchor=tk.CENTER, bg=CONTRAST_COLOR)
+    label.grid(row=0, column=0)
+    cap = cv2.VideoCapture(0)
+
+    # Right Panel
+    rightPanel = tk.PanedWindow(mainPanel, orient=tk.VERTICAL)
+    mainPanel.paneconfigure(rightPanel, minsize=RIGHT_PANEL_WIDTH)
+    mainPanel.add(rightPanel)
+
+    rightPanelTopFrame = tk.Frame(rightPanel, bg=BACKGROUND_COLOR)
+    tk.Label(rightPanelTopFrame, text="OUTPUT", anchor=tk.N, bg=BACKGROUND_COLOR, fg=FONT_COLOR,
+             font=HEADING_FONT).pack()
+    tk.Label(rightPanelTopFrame, text="", anchor=tk.N, bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
+    rightPanel.paneconfigure(rightPanelTopFrame, minsize=50)
+    rightPanel.add(rightPanelTopFrame)
+
+    rightPanelBottomFrame = tk.Frame(rightPanel, bg=BACKGROUND_COLOR)
+    tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
+    tk.Label(rightPanelBottomFrame, text="WORDS FORMED", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
+             font=BODY_FONT).pack()
+    wordText = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
+                       font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=2)
+    wordText.pack()
+    clearBtn = tk.Button(rightPanelBottomFrame, text="CLEAR", command=lambda: clearCallback(wordText, sentence),
+                         width=PLACEHOLDER_WIDTH)
+    clearBtn.pack(pady=2)
+    tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
+    tk.Label(rightPanelBottomFrame, text="SUGGESTED WORDS", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
+             font=BODY_FONT).pack()
+    suggestedWordText = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
+                                font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=5, wrap=tk.CHAR)
+    suggestedWordText.pack()
+    scrollBar = tk.Scrollbar(suggestedWordText)
+    scrollBar.pack(side=tk.RIGHT, fill=tk.BOTH)
+    suggestedWordText.config(yscrollcommand=scrollBar.set)
+    scrollBar.config(command=suggestedWordText.yview)
+
+    tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
+    tk.Label(rightPanelBottomFrame, text="SENTENCE FORMED", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
+             font=BODY_FONT).pack()
+    sentence = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
+                       font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=2)
+    sentence.pack()
+    spaceBtn = tk.Button(rightPanelBottomFrame, text="SPACE", command=lambda: spaceCallback(wordText, sentence),
+                         width=PLACEHOLDER_WIDTH)
+    spaceBtn.pack(pady=2)
+
+    rightPanel.paneconfigure(rightPanelBottomFrame, minsize=448)
+    rightPanel.add(rightPanelBottomFrame)
+    return root, cap, label, wordText, suggestedWordText, sentence
 
 
 # Define function to show frame
-def show_frames():
-    global mode
+def show_frames(cap, label, wordText, suggestedWordText, sentence):
+    global mode, button_dict
 
     recognized_letter = ""
-    word_formed = ""
-    letter_approved = False
+    suggestedWords = []
 
     fps = cvFpsCalc.get()
 
@@ -222,35 +287,53 @@ def show_frames():
     label.photoImage = photoImage
     label.configure(image=photoImage)
 
-    word_formed += recognized_letter
+    if recognized_letter:
+        readText = wordText.get("1.0", 'end-1c')
+        readSentence = sentence.get("1.0", 'end-1c')
 
-    if word_formed:
-        d.check(recognized_letter[-1])
-        print(d.suggest(recognized_letter[-1]))
+        if not readText or recognized_letter[-1].lower() != readText[-1]:
+            readText += recognized_letter[-1].lower()
+            readSentence += recognized_letter[-1].lower()
 
-    # if recognized_letter:
-    #     # Update letter box
-    #     print(recognized_letter)
-    #     letterText.configure(state='normal')
-    #     letterText.tag_configure("center", justify='center')
-    #     letterText.delete('1.0', tk.END)
-    #     letterText.insert('1.0', recognized_letter)
-    #     letterText.tag_add("center", 1.0, "end")
-    #     letterText.configure(state='disabled')
-    #
-    #     # Update word box
-    #     if letter_approved:
-    #         word_formed = recognized_letter[- 1] + word_formed
-    #         wordText.configure(state='normal')
-    #         letterText.delete('1.0', tk.END)
-    #         wordText.insert('1.0', word_formed)
-    #         wordText.tag_add(1.0, "end")
-    #         wordText.configure(state='disabled')
-    #         letter_approved = False
+            wordText.configure(state='normal')
+            wordText.delete('1.0', tk.END)
+            wordText.insert('1.0', readText)
+            wordText.tag_add(1.0, "end")
+            wordText.configure(state='disabled')
+
+            sentence.configure(state='normal')
+            sentence.delete('1.0', tk.END)
+            sentence.insert('1.0', readSentence)
+            sentence.tag_add(1.0, "end")
+            sentence.configure(state='disabled')
+
+            if not h.spell(readText):
+                suggestedWords.append(h.suggest(readText))
+            else:
+                suggestedWords.append(h.suffix_suggest(readText))
+                suggestedWords.append(h.stem(readText))
+
+            for i in range(len(button_dict)):
+                button_dict[i].destroy()
+
+            suggestedWords = [word for words in suggestedWords for word in words]
+            suggestedWordsTrunc = suggestedWords[:len(suggestedWords) if len(
+                suggestedWords) < SUGGESTED_WORD_NUMBER else SUGGESTED_WORD_NUMBER]
+
+            for i in range(len(suggestedWordsTrunc)):
+                button_dict[i] = tk.Button(suggestedWordText, text=suggestedWordsTrunc[i],
+                                           command=lambda idx=i:
+                                           wordCallback(button_dict[idx]['text'] + " ", wordText, sentence))
+                button_dict[i].pack(side=tk.RIGHT, padx=2, pady=1)
 
     # Repeat after an interval to capture continuously
-    label.after(100, show_frames)
+    label.after(100, show_frames, cap, label, wordText, suggestedWordText, sentence)
 
 
-show_frames()
-root.mainloop()
+def start_app(cap, label, root, wordText, suggestedWordText, sentence):
+    show_frames(cap, label, wordText, suggestedWordText, sentence)
+    root.mainloop()
+
+
+r, c, l, wt, swt, s = create_window()
+start_app(c, l, r, wt, swt, s)
