@@ -7,7 +7,7 @@ import tensorflow as tf
 class KeyPointClassifier(object):
     def __init__(
         self,
-        model_path='model/keypoint_classifier/LSTM_model_both_aug.tflite',
+        model_path='model/keypoint_classifier/GRU_model_moving.tflite',
         num_threads=1,
     ):
         self.interpreter = tf.lite.Interpreter(model_path=model_path,
@@ -35,4 +35,4 @@ class KeyPointClassifier(object):
 
         result_index = np.argmax(np.squeeze(result))
 
-        return result_index
+        return np.squeeze(result)
