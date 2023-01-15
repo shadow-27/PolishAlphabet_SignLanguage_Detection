@@ -2,12 +2,10 @@ import tkinter as tk
 import cv2
 from PIL import Image, ImageTk
 import keyboard
-# import enchant
-# d = enchant.Dict("en_US")
+import os
 
 from hunspell import Hunspell
-
-h = Hunspell('pl_PL')
+h = Hunspell('pl_PL', hunspell_data_dir=os.getcwd() + '/dictionaries')
 
 import csv
 import copy
