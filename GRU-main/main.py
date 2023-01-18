@@ -7,6 +7,7 @@ import os
 from hunspell import Hunspell
 h = Hunspell('pl_PL', hunspell_data_dir=os.getcwd() + '/dictionaries')
 
+import time
 import csv
 import copy
 from collections import Counter
@@ -56,6 +57,50 @@ hands = mp_hands.Hands(
 keypoint_classifier = KeyPointClassifier()
 
 point_history_classifier = PointHistoryClassifier()
+
+keypoint_classifier_one_frame = KeyPointClassifierOneFrame()
+
+all_letters = ['a',
+                'ą',
+                'b',
+                'c',
+                'ć',
+                'ch',
+                'cz',
+                'd',
+                'e',
+                'ę',
+                'f',
+                'g',
+                'h',
+                'i',
+                'j',
+                'k',
+                'l',
+                'ł',
+                'm',
+                'n',
+                'ń',
+                'o',
+                'ó',
+                'p',
+                'r',
+                'rz',
+                's',
+                'ś',
+                'sz',
+                't',
+                'u',
+                'v',
+                'w',
+                'x',
+                'y',
+                'z',
+                'ź',
+                'ż',
+                'none']
+
+boundry = 0.6
 
 # Read labels
 with open('model/keypoint_classifier/keypoint_classifier_label.csv',
@@ -126,7 +171,10 @@ def spaceCallback(wordText, sentence):
 
 def predict_values_right(obj):
     count = 0
-    indexes = define_indexing(len(obj.coordinates_with_movement_right[0]))
+    if(len(obj.coordinates_with_movement_right)!=0):
+        indexes = define_indexing(len(obj.coordinates_with_movement_right[0]))
+    else:
+        indexes = None
     relative_to_write = []
     emptyArray = np.empty(shape=(38,))
     emptyList = []
@@ -175,19 +223,34 @@ def predict_values_right(obj):
     maxArg = np.argmax(np.array(helper))
 
     result = tmp_List[maxArg][1]
-    if (maxArg<0.8):
+
+    result_value = tmp_List[maxArg][0]
+    #print("Result value:")
+    #print(result_value)
+    #print("Result:")
+    #print(result)
+    if (result_value<0.8):
+        obj.number_of_frames_right = obj.number_of_frames_right -1
+        del obj.historyCoordinates_right[0]
+        del obj.beginning_coordinates_right[0]
+        del obj.distance_right[0]
+        del obj.coordinates_with_movement_right[0]
         result = 38
-    # print(result)
-    obj.number_of_frames_right = obj.number_of_frames_right -1
-    del obj.historyCoordinates_right[0]
-    del obj.beginning_coordinates_right[0]
-    del obj.distance_right[0]
-    del obj.coordinates_with_movement_right[0]
+    else:
+        obj.number_of_frames_right = 1
+        obj.historyCoordinates_right = []
+        obj.beginning_coordinates_right = []
+        obj.distance_right = []
+        obj.coordinates_with_movement_right = []
+        obj.timer_right_hand = time.time()
     return result
 
 def predict_values_left(obj):
     count = 0
-    indexes = define_indexing(len(obj.coordinates_with_movement_left[0]))
+    if(len(obj.coordinates_with_movement_left)!=0):
+        indexes = define_indexing(len(obj.coordinates_with_movement_left[0]))
+    else:
+        indexes = None
     relative_to_write = []
     emptyArray = np.empty(shape=(38,))
     emptyList = []
@@ -236,15 +299,53 @@ def predict_values_left(obj):
     maxArg = np.argmax(np.array(helper))
 
     result = tmp_List[maxArg][1]
-    if (maxArg<0.8):
+
+    result_value = tmp_List[maxArg][0]
+    #print("Result value:")
+    #print(result_value)
+    #print("Result:")
+    #print(result)
+    if (result_value<0.8):
+        obj.number_of_frames_left = obj.number_of_frames_left -1
+        del obj.historyCoordinates_left[0]
+        del obj.beginning_coordinates_left[0]
+        del obj.distance_left[0]
+        del obj.coordinates_with_movement_left[0]
         result = 38
-    # print(result)
-    obj.number_of_frames_left = obj.number_of_frames_left -1
-    del obj.historyCoordinates_left[0]
-    del obj.beginning_coordinates_left[0]
-    del obj.distance_left[0]
-    del obj.coordinates_with_movement_left[0]
+    else:
+        obj.number_of_frames_left = 1
+        obj.historyCoordinates_left = []
+        obj.beginning_coordinates_left = []
+        obj.distance_left = []
+        obj.coordinates_with_movement_left = []
+        obj.timer_left_hand = time.time()
     return result
+
+def predict_values_one_frame(coords_list):
+    pre_processed_landmark_list = np.expand_dims(coords_list, axis=0)
+    hand_sign_id = keypoint_classifier_one_frame(pre_processed_landmark_list)
+    maxArg = np.argmax(hand_sign_id)
+    # print(maxArg)
+    return hand_sign_id[maxArg]
+
+def check_height(height):
+    if(height > 450*boundry):
+        return False
+    else:
+        return True
+
+# telling which hands are on the picture
+def which_hands(results):
+    # hand_list = []
+    # if(results is None):
+    #     return hand_list
+    how_many_hands = []
+    if(len(results)==2):
+        how_many_hands.append("Left")
+        how_many_hands.append("Right")
+    if(len(results)==1):
+        how_many_hands.append(results[0].classification[0].label)
+    return how_many_hands
 
 # create window
 def create_window():
@@ -326,6 +427,7 @@ class CoordsInfo:
     historyCoordinates_right = []
     history_movement_to_right = []
     number_of_frames_right = 1
+    timer_right_hand = time.time()
 
     presentCoordinates_left = []
     beginning_coordinates_left= []
@@ -335,6 +437,7 @@ class CoordsInfo:
     historyCoordinates_left = []
     history_movement_to_left = []
     number_of_frames_left = 1
+    timer_left_hand = time.time()
 
     recognized_letter = None
 
@@ -342,7 +445,8 @@ class CoordsInfo:
 def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
     global mode, button_dict
 
-    recognized_letter = ""
+    recognized_letter_left = ""
+    recognized_letter_right =" "
     suggestedWords = []
     # print(obj.distance_left)
     fps = cvFpsCalc.get()
@@ -367,7 +471,17 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
     results = hands.process(image)
     image.flags.writeable = True
 
-    pred = 38
+    hands_list = []
+    # helper when hand is out of frame with some frames in it
+    if(results.multi_handedness is not None):
+        hands_list = which_hands(results.multi_handedness)
+
+    # if(hands_list.__contains__("Left")):
+    #     print("Zawiera lewa")
+    # pred = 38
+
+    pred_left = 38
+    pred_right = 38
 
     # Hand landmarks
     if results.multi_hand_landmarks is not None:
@@ -378,23 +492,32 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
             hand = handedness.classification[0].label
             if (hand=="Right"):
                 if(obj.number_of_frames_right==1):
-                    # print("Right")
+  
                     # first time right hand is visible
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
                     # Landmark calculation
                     landmark_list = calc_landmark_list(debug_image, hand_landmarks)
                     
-                    # obj.number_of_frames_right = obj.number_of_frames_right + 1
-                    # obj.presentCoordinates_right = pre_process_landmark(
-                    #     landmark_list)
-
-                    # obj.beginning_coordinates_right = [landmark_list[12][0],landmark_list[12][1]]
-                    # obj.distance_right = int(math.sqrt(math.pow(landmark_list[0][0]-landmark_list[5][0],2)+math.pow(landmark_list[0][1]-landmark_list[5][1],2)))
-                    # if(obj.distance_right==0):
-                    #     obj.distance_right=1
+                    # check if the sign is ready
+                    predicted = predict_values_one_frame(pre_process_landmark(landmark_list))
+                    # print(predicted)
                     
-                    # pre_processed_point_history_list = pre_process_point_history(
-                    #     debug_image, point_history)
+                    if(predicted<0.75):
+                        #print("Not good")
+                        continue
+                    #print("Good")
+
+                    # check if hand is high enough
+                    #print("Wysokosc")
+                    #print(landmark_list[9][1])
+                    if(not check_height(landmark_list[9][1])):
+                        #print("Too low")
+                        continue
+                    # check if it is not too soon for next sign
+                    #print(time.time() - obj.timer_right_hand)
+                    if(time.time() - obj.timer_right_hand < 2):
+                        #print("too soon")
+                        continue
                     obj.number_of_frames_right = obj.number_of_frames_right + 1
                     obj.presentCoordinates_right = pre_process_landmark(
                         landmark_list)
@@ -405,73 +528,71 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                     obj.distance_right = []
                     obj.distance_right.append(int(math.sqrt(math.pow(landmark_list[0][0]-landmark_list[5][0],2)+math.pow(landmark_list[0][1]-landmark_list[5][1],2))))
                     # obj.distance_right = []
-                    if(obj.distance_right[-1]==0):
-                        obj.distance_right[0]=1
+                    # this can be wring for static ones, instead of 0.01 were 1
+                    if(obj.distance_right[0]==0):
+                        obj.distance_right[0]=0.01
                     
-                    # pre_processed_point_history_list = pre_process_point_history(
-                    #     debug_image, point_history)
-                    # print(obj.historyCoordinates_right)
-                    # print(obj.beginning_coordinates_right)
-                    # print(obj.distance_right)
                 else:
                     # print("else")
                     obj.number_of_frames_right = obj.number_of_frames_right + 1
                     # print(len(obj.historyCoordinates_right))
                     if(obj.number_of_frames_right==8):
+                        # print(time.time()-obj.timer_right_hand)
                         #print("Tutaj predykcja")
-                        pred = predict_values_right(obj)
+                        #print(obj.number_of_frames_right)
+                        pred_right = predict_values_right(obj)
+                        # if(pred!=38):
+                        #     obj.timer_right_hand = time.time()
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
                     landmark_list = calc_landmark_list(debug_image, hand_landmarks)
 
                     # dodanie do historii landmarków
+
+                    # error - tu powinno byc puste a nie appendowac jak znajdzie literke - fixed chyba - jednak nie error chyba
+
+
                     obj.historyCoordinates_right.append(pre_process_landmark(landmark_list))
                     obj.beginning_coordinates_right.append([landmark_list[12][0],landmark_list[12][1]])
                     obj.distance_right.append(int(math.sqrt(math.pow(landmark_list[0][0]-landmark_list[5][0],2)+math.pow(landmark_list[0][1]-landmark_list[5][1],2))))
                     if(obj.distance_right[-1]==0):
-                        obj.distance_right[-1]=1
-
-
-
+                        obj.distance_right[-1]=0.01
                     tmp_coords = []
                     obj.coordinates_with_movement_right.append(tmp_coords)
-                    # obj.coordinates_with_movement_right.append((relative_change(obj.beginning_coordinates_right[0][0],obj.beginning_coordinates_right[0][1],landmark_list[12][0],landmark_list[12][1],obj.distance_right[0])))         
+       
                     # calculating relative change between every possible frames
                     # print("Here:")
                     count = 0           
                     for i in obj.coordinates_with_movement_right:
                         obj.coordinates_with_movement_right[count].append((relative_change(obj.beginning_coordinates_right[count][0],obj.beginning_coordinates_right[count][1],landmark_list[12][0],landmark_list[12][1],obj.distance_right[count])))
                         count = count + 1
-                    #     for i in len(obj.beginning_coordinates_right):
-                    #     print("chyba zle")
-                        # obj.coordinates_with_movement_right.append(relative_change(obj.beginning_coordinates_right[i-1][0],obj.beginning_coordinates_right[i-1][1],landmark_list[12][0],landmark_list[12][1],obj.distance_right[-1]))
-                    # print("Iteration:")
-                    # print(obj.historyCoordinates_right)
-                    # print(obj.beginning_coordinates_right)
-                    # print(obj.distance_right)
-                    # print(obj.coordinates_with_movement_right)
-
-                    # dodanie do historii landmarków
-
-                    # print(obj.coordinates_with_movement_right)
             if (hand=="Left"):
                 if(obj.number_of_frames_left==1):
-                    # print("left")
+  
                     # first time left hand is visible
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
                     # Landmark calculation
                     landmark_list = calc_landmark_list(debug_image, hand_landmarks)
                     
-                    # obj.number_of_frames_left = obj.number_of_frames_left + 1
-                    # obj.presentCoordinates_left = pre_process_landmark(
-                    #     landmark_list)
-
-                    # obj.beginning_coordinates_left = [landmark_list[12][0],landmark_list[12][1]]
-                    # obj.distance_left = int(math.sqrt(math.pow(landmark_list[0][0]-landmark_list[5][0],2)+math.pow(landmark_list[0][1]-landmark_list[5][1],2)))
-                    # if(obj.distance_left==0):
-                    #     obj.distance_left=1
+                    # check if the sign is ready
+                    predicted = predict_values_one_frame(pre_process_landmark(landmark_list))
+                    # print(predicted)
                     
-                    # pre_processed_point_history_list = pre_process_point_history(
-                    #     debug_image, point_history)
+                    if(predicted<0.75):
+                        #print("Not good")
+                        continue
+                    #print("Good")
+
+                    # check if hand is high enough
+                    #print("Wysokosc")
+                    #print(landmark_list[9][1])
+                    if(not check_height(landmark_list[9][1])):
+                        #print("Too low")
+                        continue
+                    # check if it is not too soon for next sign
+                    #print(time.time() - obj.timer_left_hand)
+                    if(time.time() - obj.timer_left_hand < 2):
+                        #print("too soon")
+                        continue
                     obj.number_of_frames_left = obj.number_of_frames_left + 1
                     obj.presentCoordinates_left = pre_process_landmark(
                         landmark_list)
@@ -481,36 +602,38 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                     obj.beginning_coordinates_left.append([landmark_list[12][0],landmark_list[12][1]])
                     obj.distance_left = []
                     obj.distance_left.append(int(math.sqrt(math.pow(landmark_list[0][0]-landmark_list[5][0],2)+math.pow(landmark_list[0][1]-landmark_list[5][1],2))))
+                    # obj.distance_left = []
+                    # this can be wring for static ones, instead of 0.01 were 1
                     if(obj.distance_left[0]==0):
-                        obj.distance_left[0]=1
+                        obj.distance_left[0]=0.01
                     
-                    # pre_processed_point_history_list = pre_process_point_history(
-                    #     debug_image, point_history)
-                    # print(obj.historyCoordinates_left)
-                    # print(obj.beginning_coordinates_left)
-                    # print(obj.distance_left)
                 else:
                     # print("else")
                     obj.number_of_frames_left = obj.number_of_frames_left + 1
                     # print(len(obj.historyCoordinates_left))
                     if(obj.number_of_frames_left==8):
+                        # print(time.time()-obj.timer_left_hand)
                         #print("Tutaj predykcja")
-                        pred = predict_values_left(obj)
+                        #print(obj.number_of_frames_left)
+                        pred_left = predict_values_left(obj)
+                        # if(pred!=38):
+                        #     obj.timer_left_hand = time.time()
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
                     landmark_list = calc_landmark_list(debug_image, hand_landmarks)
 
                     # dodanie do historii landmarków
+
+                    # error - tu powinno byc puste a nie appendowac jak znajdzie literke - fixed chyba - jednak nie error chyba
+
+
                     obj.historyCoordinates_left.append(pre_process_landmark(landmark_list))
                     obj.beginning_coordinates_left.append([landmark_list[12][0],landmark_list[12][1]])
                     obj.distance_left.append(int(math.sqrt(math.pow(landmark_list[0][0]-landmark_list[5][0],2)+math.pow(landmark_list[0][1]-landmark_list[5][1],2))))
                     if(obj.distance_left[-1]==0):
-                        obj.distance_left[-1]=1
-
-
-
+                        obj.distance_left[-1]=0.01
                     tmp_coords = []
                     obj.coordinates_with_movement_left.append(tmp_coords)
-                    # obj.coordinates_with_movement_left.append((relative_change(obj.beginning_coordinates_left[0][0],obj.beginning_coordinates_left[0][1],landmark_list[12][0],landmark_list[12][1],obj.distance_left[0])))         
+       
                     # calculating relative change between every possible frames
                     # print("Here:")
                     count = 0           
@@ -519,31 +642,6 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                         count = count + 1
             # Conversion to relative coordinates / normalized coordinates
 
-
-            # # Write to the dataset file
-            # logging_csv(number, mode, presentCoordinates_right,
-            #             pre_processed_point_history_list)
-
-            # Hand sign classification
-            # pre_processed_landmark_list = np.expand_dims(presentCoordinates_right, axis=0)
-            # hand_sign_id = keypoint_classifier(pre_processed_landmark_list)
-            # if hand_sign_id == "Not applicable":  # Point gesture
-            #     point_history.append(landmark_list[8])
-            # else:
-            #     point_history.append([0, 0])
-
-            # Finger gesture classification
-            # finger_gesture_id = 0
-            # point_history_len = len(pre_processed_point_history_list)
-            # if point_history_len == (history_length * 2):
-            #     finger_gesture_id = point_history_classifier(
-            #         pre_processed_point_history_list)
-
-            # Calculates the gesture IDs in the latest detection
-            # finger_gesture_history.append(finger_gesture_id)
-            # most_common_fg_id = Counter(
-            #     finger_gesture_history).most_common()
-
             # Drawing part
             debug_image = draw_bounding_rect(use_brect, debug_image, brect)
             debug_image = draw_landmarks(debug_image, landmark_list)
@@ -551,11 +649,48 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                 debug_image,
                 brect,
                 handedness,
-                keypoint_classifier_labels[pred],
+                all_letters[pred_left],
                 None,
             )
+            recognized_letter_left = all_letters[pred_left]
+            recognized_letter_right = all_letters[pred_right]
     else:
         point_history.append([0, 0])
+    
+    if((not hands_list.__contains__("Right")) and obj.number_of_frames_right > 1):
+        print("Zostały klatki prawe")
+        pred_right = predict_values_right(obj)
+        if(pred_right!=38):
+            obj.timer_right_hand = time.time()
+            obj.number_of_frames_right = 1
+            obj.historyCoordinates_right = []
+            obj.beginning_coordinates_right = []
+            obj.distance_right = []
+            obj.coordinates_with_movement_right = []
+        else:
+            obj.number_of_frames_right = 1
+            obj.historyCoordinates_right = []
+            obj.beginning_coordinates_right = []
+            obj.distance_right = []
+            obj.coordinates_with_movement_right = []
+
+    if((not hands_list.__contains__("Left")) and obj.number_of_frames_left > 1):
+        print("Zostały klatki prawe")
+        pred_left = predict_values_left(obj)
+        if(pred_left!=38):
+            obj.timer_left_hand = time.time()
+            obj.number_of_frames_left = 1
+            obj.historyCoordinates_left = []
+            obj.beginning_coordinates_left = []
+            obj.distance_left = []
+            obj.coordinates_with_movement_left = []
+        else:
+            obj.number_of_frames_left = 1
+            obj.historyCoordinates_left = []
+            obj.beginning_coordinates_left = []
+            obj.distance_left = []
+            obj.coordinates_with_movement_left = []
+
 
     debug_image = draw_point_history(debug_image, point_history)
     debug_image = draw_info(debug_image, fps, mode, number)
@@ -565,15 +700,59 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
     label.photoImage = photoImage
     label.configure(image=photoImage)
 
+    # recognized_letter = all_letters[5]
+    #print(recognized_letter)
 
-    if recognized_letter and pred!=38:
-        print(pred)
+    # print result from right hand
+    if recognized_letter_right and pred_right!=38:
         readText = wordText.get("1.0", 'end-1c')
         readSentence = sentence.get("1.0", 'end-1c')
 
-        if not readText or recognized_letter[-1].lower() != readText[-1]:
-            readText += recognized_letter[-1].lower()
-            readSentence += recognized_letter[-1].lower()
+        sign_length = len(recognized_letter_right)
+        if not readText or recognized_letter_right.lower() != readText[-sign_length:]:
+            readText += recognized_letter_right.lower()
+            readSentence += recognized_letter_right.lower()
+
+            wordText.configure(state='normal')
+            wordText.delete('1.0', tk.END)
+            wordText.insert('1.0', readText)
+            wordText.tag_add(1.0, "end")
+            wordText.configure(state='disabled')
+
+            sentence.configure(state='normal')
+            sentence.delete('1.0', tk.END)
+            sentence.insert('1.0', readSentence)
+            sentence.tag_add(1.0, "end")
+            sentence.configure(state='disabled')
+
+            if not h.spell(readText):
+                suggestedWords.append(h.suggest(readText))
+            else:
+                suggestedWords.append(h.suffix_suggest(readText))
+                suggestedWords.append(h.stem(readText))
+
+            for i in range(len(button_dict)):
+                button_dict[i].destroy()
+
+            suggestedWords = [word for words in suggestedWords for word in words]
+            suggestedWordsTrunc = suggestedWords[:len(suggestedWords) if len(
+                suggestedWords) < SUGGESTED_WORD_NUMBER else SUGGESTED_WORD_NUMBER]
+
+            for i in range(len(suggestedWordsTrunc)):
+                button_dict[i] = tk.Button(suggestedWordText, text=suggestedWordsTrunc[i],
+                                           command=lambda idx=i:
+                                           wordCallback(button_dict[idx]['text'] + " ", wordText, sentence))
+                button_dict[i].pack(side=tk.RIGHT, padx=2, pady=1)
+
+    # print result from left hand
+    if recognized_letter_left and pred_left!=38:
+        readText = wordText.get("1.0", 'end-1c')
+        readSentence = sentence.get("1.0", 'end-1c')
+
+        sign_length = len(recognized_letter_left)
+        if not readText or recognized_letter_left.lower() != readText[-sign_length:]:
+            readText += recognized_letter_left.lower()
+            readSentence += recognized_letter_left.lower()
 
             wordText.configure(state='normal')
             wordText.delete('1.0', tk.END)
