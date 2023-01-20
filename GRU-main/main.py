@@ -445,8 +445,19 @@ class CoordsInfo:
     timer_after_proper_height_left = time.time()
     ready_to_start_left = False
 
+    miss_frame = False
+
 # Define function to show frame
 def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
+
+    # miss every 2nd frame, doesnt work
+
+    # if(obj.miss_frame):
+    #     obj.miss_frame = False
+    #     label.after(100, show_frames, cap, label, wordText, suggestedWordText, sentence,obj)
+    #     return
+    # obj.miss_frame = True
+
     global mode, button_dict
 
     recognized_letter_left = ""
@@ -731,6 +742,42 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
     recognized_letter_left = all_letters[pred_left]
     recognized_letter_right = all_letters[pred_right]
 
+    # q case
+    if((recognized_letter_left=='o' and recognized_letter_right=='x')):
+        # print("left o right x")
+        recognized_letter_left = 'q'
+        recognized_letter_right = None
+    elif((recognized_letter_left=='o' and obj.number_of_frames_right > 1 and recognized_letter_left!='q')):
+        # print("left o right predicting")
+        if(all_letters[predict_values_right(obj)]=='x'):
+            # print("left o right predicted x")
+            recognized_letter_left = 'q'
+            recognized_letter_right = None
+    elif((recognized_letter_left=='x' and obj.number_of_frames_right > 1 and recognized_letter_left!='q')):
+        # print("left x right predicting")
+        if(all_letters[predict_values_right(obj)]=='o'):
+            # print("left x right predicted o")
+            recognized_letter_left = 'q'
+            recognized_letter_right = None
+
+    if((recognized_letter_right=='o' and recognized_letter_left=='x' and recognized_letter_left!='q')):
+        # print("right o left x")
+        recognized_letter_left = 'q'
+        recognized_letter_right = None
+    elif((recognized_letter_right=='o' and obj.number_of_frames_left > 1 and recognized_letter_left!='q')):
+        # print("right o left predcting")
+        if(all_letters[predict_values_left(obj)]=='x'):
+            # print("right o left predicted x")
+            recognized_letter_left = 'q'
+            recognized_letter_right = None
+    elif((recognized_letter_right=='x' and obj.number_of_frames_left > 1 and recognized_letter_left!='q')):
+        # print("right x left predicting")
+        if(all_letters[predict_values_left(obj)]=='o'):
+            # print("right x right predicted o")
+            recognized_letter_left = 'q'
+            recognized_letter_right = None
+
+
     # recognized_letter = all_letters[5]
     #print(recognized_letter)
 
@@ -780,7 +827,7 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                 button_dict[i].pack(side=tk.RIGHT, padx=2, pady=1)
 
     # print result from left hand
-    if recognized_letter_left and pred_left!=38:
+    if ((recognized_letter_left and pred_left!=38) or recognized_letter_left=='q'):
         # print("Left:")
         # print(pred_left)
         # print(recognized_letter_left)
