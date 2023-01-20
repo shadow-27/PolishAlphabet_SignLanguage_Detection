@@ -582,7 +582,7 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
             if (hand=="Left"):
                 if(obj.number_of_frames_left==1):
 
-                    if(time.time() - obj.timer_left_hand < 2):
+                    if(time.time() - obj.timer_left_hand < 1.5):
                         #print("too soon")
                         continue  
                     # first time left hand is visible
@@ -717,7 +717,7 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
             obj.beginning_coordinates_left = []
             obj.distance_left = []
             obj.coordinates_with_movement_left = []
-            obj.ready_to_start_right = False
+            obj.ready_to_start_left = False
 
 
     debug_image = draw_point_history(debug_image, point_history)
