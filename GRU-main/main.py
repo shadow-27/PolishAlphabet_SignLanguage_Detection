@@ -243,6 +243,7 @@ def predict_values_right(obj):
         obj.distance_right = []
         obj.coordinates_with_movement_right = []
         obj.timer_right_hand = time.time()
+        obj.ready_to_start_right = False
     return result
 
 def predict_values_left(obj):
@@ -319,6 +320,7 @@ def predict_values_left(obj):
         obj.distance_left = []
         obj.coordinates_with_movement_left = []
         obj.timer_left_hand = time.time()
+        obj.ready_to_start_left = False
     return result
 
 def predict_values_one_frame(coords_list):
@@ -428,6 +430,8 @@ class CoordsInfo:
     history_movement_to_right = []
     number_of_frames_right = 1
     timer_right_hand = time.time()
+    timer_after_proper_height_right = time.time()
+    ready_to_start_right = False
 
     presentCoordinates_left = []
     beginning_coordinates_left= []
@@ -438,8 +442,8 @@ class CoordsInfo:
     history_movement_to_left = []
     number_of_frames_left = 1
     timer_left_hand = time.time()
-
-    recognized_letter = None
+    timer_after_proper_height_left = time.time()
+    ready_to_start_left = False
 
 # Define function to show frame
 def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
@@ -492,7 +496,13 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
             hand = handedness.classification[0].label
             if (hand=="Right"):
                 if(obj.number_of_frames_right==1):
-  
+
+                    # check if it is not too soon for next sign
+                    #print(time.time() - obj.timer_right_hand)
+                    if(time.time() - obj.timer_right_hand < 1.5):
+                        #print("too soon")
+                        continue
+
                     # first time right hand is visible
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
                     # Landmark calculation
@@ -513,11 +523,15 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                     if(not check_height(landmark_list[9][1])):
                         #print("Too low")
                         continue
-                    # check if it is not too soon for next sign
-                    #print(time.time() - obj.timer_right_hand)
-                    if(time.time() - obj.timer_right_hand < 2):
-                        #print("too soon")
+
+                    if(not obj.ready_to_start_right):
+                        obj.ready_to_start_right = True
+                        obj.timer_after_proper_height_right = time.time()
+
+                    if(time.time() - obj.timer_after_proper_height_right < 0.7):
+                        # print("after_height_right")
                         continue
+
                     obj.number_of_frames_right = obj.number_of_frames_right + 1
                     obj.presentCoordinates_right = pre_process_landmark(
                         landmark_list)
@@ -567,7 +581,10 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                         count = count + 1
             if (hand=="Left"):
                 if(obj.number_of_frames_left==1):
-  
+
+                    if(time.time() - obj.timer_left_hand < 2):
+                        #print("too soon")
+                        continue  
                     # first time left hand is visible
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
                     # Landmark calculation
@@ -589,10 +606,18 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                         #print("Too low")
                         continue
                     # check if it is not too soon for next sign
-                    #print(time.time() - obj.timer_left_hand)
-                    if(time.time() - obj.timer_left_hand < 2):
-                        #print("too soon")
+
+                    # wait until user stabilises hand
+
+                    if(not obj.ready_to_start_left):
+                        obj.ready_to_start_left = True
+                        obj.timer_after_proper_height_left = time.time()
+
+                    if(time.time() - obj.timer_after_proper_height_left < 0.7):
+                        # print("after_height_left")
                         continue
+
+                    #print(time.time() - obj.timer_left_hand)
                     obj.number_of_frames_left = obj.number_of_frames_left + 1
                     obj.presentCoordinates_left = pre_process_landmark(
                         landmark_list)
@@ -665,12 +690,15 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
             obj.beginning_coordinates_right = []
             obj.distance_right = []
             obj.coordinates_with_movement_right = []
+            obj.ready_to_start_right = False
         else:
             obj.number_of_frames_right = 1
             obj.historyCoordinates_right = []
             obj.beginning_coordinates_right = []
             obj.distance_right = []
             obj.coordinates_with_movement_right = []
+            obj.ready_to_start_right = False
+
 
     if((not hands_list.__contains__("Left")) and obj.number_of_frames_left > 1):
         #print("Zostały klatki prawe")
@@ -682,12 +710,14 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
             obj.beginning_coordinates_left = []
             obj.distance_left = []
             obj.coordinates_with_movement_left = []
+            obj.ready_to_start_left = False
         else:
             obj.number_of_frames_left = 1
             obj.historyCoordinates_left = []
             obj.beginning_coordinates_left = []
             obj.distance_left = []
             obj.coordinates_with_movement_left = []
+            obj.ready_to_start_right = False
 
 
     debug_image = draw_point_history(debug_image, point_history)
@@ -794,7 +824,7 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence,obj):
                 button_dict[i].pack(side=tk.RIGHT, padx=2, pady=1)
 
     # Repeat after an interval to capture continuously
-    label.after(100, show_frames, cap, label, wordText, suggestedWordText, sentence,obj)
+    label.after(150, show_frames, cap, label, wordText, suggestedWordText, sentence,obj)
 
 
 def start_app(cap, label, root, wordText, suggestedWordText, sentence):
