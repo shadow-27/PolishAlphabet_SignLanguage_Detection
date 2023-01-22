@@ -90,6 +90,10 @@ def wordCallback(buttonText, wordText, sentence):
     sentence.insert(tk.END, buttonText)
     sentence.configure(state='disabled')
 
+def backspace(wordText,sentence):
+   wordText.configure(state='normal')
+   wordText.delete('end-2c', tk.END)
+   wordText.configure(state='disabled')
 
 
 # clear callback
@@ -185,6 +189,7 @@ def predict_values_right(obj):
     del obj.coordinates_with_movement_right[0]
     return result
 
+
 def predict_values_left(obj):
     count = 0
     indexes = define_indexing(len(obj.coordinates_with_movement_left[0]))
@@ -246,6 +251,8 @@ def predict_values_left(obj):
     del obj.coordinates_with_movement_left[0]
     return result
 
+
+
 # create window
 def create_window():
     root = tk.Tk()
@@ -292,6 +299,9 @@ def create_window():
     clearBtn = tk.Button(rightPanelBottomFrame, text="CLEAR", command=lambda: clearCallback(wordText, sentence),
                          width=PLACEHOLDER_WIDTH)
     clearBtn.pack(pady=2)
+    delBtn = tk.Button(rightPanelBottomFrame, text="DEL", command=lambda: backspace(wordText,sentence),
+                         width=PLACEHOLDER_WIDTH)
+    delBtn.pack(pady=2)
     tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
     tk.Label(rightPanelBottomFrame, text="SUGGESTED WORDS", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
              font=BODY_FONT).pack()
