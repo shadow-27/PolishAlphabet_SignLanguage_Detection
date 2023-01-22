@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="1e50a038-0e42-443c-90a5-d636b17f394e" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/GRU-main/model/keypoint_classifier/GRU_model_one_frame_aug.hdf5" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/GRU-main/model/keypoint_classifier/GRU_model_one_frame_aug.tflite" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GRU-main/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/GRU-main/app.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/GRU-main/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/GRU-main/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GRU-main/model/keypoint_classifier/hdf5_to_tflite.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/GRU-main/model/keypoint_classifier/hdf5_to_tflite.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/GRU-main/model/keypoint_classifier/keypoint_classifier.py" beforeDir="false" afterPath="$PROJECT_DIR$/GRU-main/model/keypoint_classifier/keypoint_classifier.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -273,7 +278,7 @@
       <workItem from="1672339729966" duration="903000" />
       <workItem from="1673042789788" duration="185000" />
       <workItem from="1673789902312" duration="370000" />
-      <workItem from="1673790308190" duration="7883000" />
+      <workItem from="1673790308190" duration="8241000" />
     </task>
     <servers />
   </component>
@@ -305,7 +310,7 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/PolishAlphabet_SignLanguage_Detection$main.coverage" NAME="main Coverage Results" MODIFIED="1673873878526" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GRU-main" />
+    <SUITE FILE_PATH="coverage/PolishAlphabet_SignLanguage_Detection$main.coverage" NAME="main Coverage Results" MODIFIED="1674386255551" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/GRU-main" />
     <SUITE FILE_PATH="coverage/PolishAlphabet_SignLanguage_Detection$vid_frames.coverage" NAME="vid_frames Coverage Results" MODIFIED="1671023486011" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/PolishAlphabet_SignLanguage_Detection$app.coverage" NAME="app Coverage Results" MODIFIED="1671023507616" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
