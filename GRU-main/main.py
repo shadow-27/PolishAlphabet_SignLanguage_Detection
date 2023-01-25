@@ -27,7 +27,7 @@ h = Hunspell('pl_PL', hunspell_data_dir=os.getcwd() + '/dictionaries')
 
 # Configure
 WINDOW_WIDTH = 1000
-WINDOW_HEIGHT = 498
+WINDOW_HEIGHT = 570
 LEFT_PANEL_WIDTH = 648
 RIGHT_PANEL_WIDTH = 452
 WEBCAM_DIM = 800
@@ -39,7 +39,7 @@ HEADING_FONT = ('Courier New', 36)
 BODY_FONT = ('Courier New', 14)
 BUTTON_FONT = ('Courier New', 10)
 PLACEHOLDER_WIDTH = 27
-HEIGHT_GAP = 2
+HEIGHT_GAP = 1
 SUGGESTED_WORD_NUMBER = 5
 
 cancel = False
@@ -367,7 +367,7 @@ def create_window():
     mainPanel.add(leftPanel)
 
     # Webcam video display
-    label = tk.Label(leftPanel, anchor=tk.CENTER, bg=CONTRAST_COLOR)
+    label = tk.Label(leftPanel, anchor=tk.CENTER, bg=BACKGROUND_COLOR, height=int(0.97*WINDOW_HEIGHT), bd=2)
     label.grid(row=0, column=0)
     cap = cv2.VideoCapture(0)
 
@@ -379,12 +379,10 @@ def create_window():
     rightPanelTopFrame = tk.Frame(rightPanel, bg=BACKGROUND_COLOR)
     tk.Label(rightPanelTopFrame, text="OUTPUT", anchor=tk.N, bg=BACKGROUND_COLOR, fg=FONT_COLOR,
              font=HEADING_FONT).pack()
-    tk.Label(rightPanelTopFrame, text="", anchor=tk.N, bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
     rightPanel.paneconfigure(rightPanelTopFrame, minsize=50)
     rightPanel.add(rightPanelTopFrame)
 
     rightPanelBottomFrame = tk.Frame(rightPanel, bg=BACKGROUND_COLOR)
-    tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
     tk.Label(rightPanelBottomFrame, text="WORDS FORMED", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
              font=BODY_FONT).pack()
     wordText = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
@@ -416,6 +414,12 @@ def create_window():
     spaceBtn = tk.Button(rightPanelBottomFrame, text="SPACE", command=lambda: spaceCallback(wordText, sentence),
                          width=PLACEHOLDER_WIDTH)
     spaceBtn.pack(pady=2)
+    tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
+    tk.Label(rightPanelBottomFrame, text="LOGS", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
+             font=BODY_FONT).pack()
+    logs = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
+                       font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=4, wrap=tk.CHAR)
+    logs.pack()
 
     rightPanel.paneconfigure(rightPanelBottomFrame, minsize=448)
     rightPanel.add(rightPanelBottomFrame)
