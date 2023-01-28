@@ -27,9 +27,9 @@ h = Hunspell('pl_PL', hunspell_data_dir=os.getcwd() + '/dictionaries')
 
 # Configure
 WINDOW_WIDTH = 1000
-WINDOW_HEIGHT = 570
+WINDOW_HEIGHT = 600
 LEFT_PANEL_WIDTH = 648
-RIGHT_PANEL_WIDTH = 452
+RIGHT_PANEL_WIDTH = 482
 WEBCAM_DIM = 800
 SCALE_FACTOR = 1.5
 CONTRAST_COLOR = "#104cf4"
