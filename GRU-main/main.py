@@ -421,12 +421,17 @@ def create_window():
     spaceBtn = tk.Button(rightPanelBottomFrame, text="SPACE", command=lambda: spaceCallback(wordText, sentence),
                          width=PLACEHOLDER_WIDTH)
     spaceBtn.pack(pady=2)
-    tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
-    tk.Label(rightPanelBottomFrame, text="MESSAGE FOR THE USER", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
+    #tk.Label(rightPanelBottomFrame, text="", bg=BACKGROUND_COLOR, height=HEIGHT_GAP).pack()
+    tk.Label(rightPanelBottomFrame, text="RIGHT HAND MESSAGE", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
              font=BODY_FONT).pack()
     logs = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
-                       font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=4, wrap=tk.CHAR)
+                       font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=2, wrap=tk.WORD)
     logs.pack()
+    tk.Label(rightPanelBottomFrame, text="LEFT HAND MESSAGE", bg=BACKGROUND_COLOR, fg=FONT_COLOR,
+             font=BODY_FONT).pack()
+    logsLeft = tk.Text(rightPanelBottomFrame, state=tk.DISABLED, relief=tk.RAISED, fg=FONT_COLOR,
+                   font=BODY_FONT, width=PLACEHOLDER_WIDTH, height=2, wrap=tk.WORD)
+    logsLeft.pack()
     # scrollBar1 = tk.Scrollbar(logs)
     # scrollBar1.pack(side=tk.RIGHT, fill=tk.BOTH)
     # logs.config(yscrollcommand=scrollBar1.set)
@@ -434,7 +439,7 @@ def create_window():
 
     rightPanel.paneconfigure(rightPanelBottomFrame, minsize=448)
     rightPanel.add(rightPanelBottomFrame)
-    return root, cap, label, wordText, suggestedWordText, sentence , logs
+    return root, cap, label, wordText, suggestedWordText, sentence , logs, logsLeft
 
 
 class CoordsInfo:
@@ -466,7 +471,7 @@ class CoordsInfo:
 
 
 # Define function to show frame
-def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs):
+def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs, logsLeft):
     global mode, button_dict
 
     recognized_letter_left = ""
@@ -583,7 +588,7 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs):
                 if obj.number_of_frames_left == 1:
 
                     if time.time() - obj.timer_left_hand < 1.5:
-                        print_to_message(logs, "Too early for the left hand to detect a sign.")
+                        print_to_message(logsLeft, "Too early for the left hand to detect a sign.")
                         continue
                         # first time left hand is visible
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
@@ -594,12 +599,12 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs):
                     predicted = predict_values_one_frame(pre_process_landmark(landmark_list))
 
                     if predicted < 0.75:
-                        print_to_message(logs, "Show a proper starting sign.")
+                        print_to_message(logsLeft, "Show a proper starting sign.")
                         continue
 
                     # check if hand is high enough
                     if not check_height(landmark_list[9][1]):
-                        print_to_message(logs, "Raise left hand.")
+                        print_to_message(logsLeft, "Raise left hand.")
                         continue
                     # check if it is not too soon for next sign
                     # wait until user stabilises hand
@@ -608,10 +613,10 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs):
                         obj.timer_after_proper_height_left = time.time()
 
                     if time.time() - obj.timer_after_proper_height_left < 0.7:
-                        print_to_message(logs, "Prepare left hand...")
+                        print_to_message(logsLeft, "Prepare left hand...")
                         continue
 
-                    print_to_message(logs, "Registering left hand...")
+                    print_to_message(logsLeft, "Registering left hand...")
                     obj.number_of_frames_left = obj.number_of_frames_left + 1
                     obj.presentCoordinates_left = pre_process_landmark(
                         landmark_list)
@@ -820,14 +825,14 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs):
                 button_dict[i].pack(side=tk.RIGHT, padx=2, pady=1)
 
     # Repeat after an interval to capture continuously
-    label.after(150, show_frames, cap, label, wordText, suggestedWordText, sentence, obj, logs)
+    label.after(150, show_frames, cap, label, wordText, suggestedWordText, sentence, obj, logs, logsLeft)
 
 
-def start_app(cap, label, root, wordText, suggestedWordText, sentence, logs):
+def start_app(cap, label, root, wordText, suggestedWordText, sentence, logs, logsLeft):
     infoObject = CoordsInfo()
-    show_frames(cap, label, wordText, suggestedWordText, sentence, infoObject, logs)
+    show_frames(cap, label, wordText, suggestedWordText, sentence, infoObject, logs, logsLeft)
     root.mainloop()
 
 
-r, c, l, wt, swt, s, logs = create_window()
-start_app(c, l, r, wt, swt, s, logs)
+r, c, l, wt, swt, s, logs, logsLeft = create_window()
+start_app(c, l, r, wt, swt, s, logs, logsLeft)
