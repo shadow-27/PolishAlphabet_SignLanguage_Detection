@@ -19,8 +19,6 @@ from codeUtils import *
 from utils.cvfpscalc import CvFpsCalc
 from model.keypoint_classifier.keypoint_classifier import KeyPointClassifier
 from model.keypoint_classifier.keypoint_classifier import KeyPointClassifierOneFrame
-from model.point_history_classifier.point_history_classifier import PointHistoryClassifier
-
 from hunspell import Hunspell
 h = Hunspell('pl_PL', hunspell_data_dir=os.getcwd() + '/dictionaries')
 
@@ -58,9 +56,9 @@ hands = mp_hands.Hands(
 
 keypoint_classifier = KeyPointClassifier()
 
-point_history_classifier = PointHistoryClassifier()
-
 keypoint_classifier_one_frame = KeyPointClassifierOneFrame()
+
+
 
 all_letters = ['a',
                'ą',
@@ -110,13 +108,6 @@ with open('model/keypoint_classifier/keypoint_classifier_label.csv',
     keypoint_classifier_labels = csv.reader(f)
     keypoint_classifier_labels = [
         row[0] for row in keypoint_classifier_labels
-    ]
-with open(
-        'model/point_history_classifier/point_history_classifier_label.csv',
-        encoding='utf-8-sig') as f:
-    point_history_classifier_labels = csv.reader(f)
-    point_history_classifier_labels = [
-        row[0] for row in point_history_classifier_labels
     ]
 
 # FPS Measurement
@@ -705,7 +696,6 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs, lo
             obj.coordinates_with_movement_left = []
             obj.ready_to_start_left = False
 
-    debug_image = draw_point_history(debug_image, point_history)
     debug_image = draw_info(debug_image, fps, mode, number)
     debug_image = Image.fromarray(debug_image)
 
@@ -715,6 +705,14 @@ def show_frames(cap, label, wordText, suggestedWordText, sentence, obj, logs, lo
 
     recognized_letter_left = all_letters[pred_left]
     recognized_letter_right = all_letters[pred_right]
+
+    # #capturing cor-ordinates for predicted_letter
+    # if recognized_letter_right == 'z':
+    #     logging_csv_create("right", 1, obj.presentCoordinates_right, [],'z.csv')
+    # elif recognized_letter_left == 'z':
+    #     logging_csv_create("left", 1, obj.presentCoordinates_left,[],'z.csv')
+
+
 
     # q case
     if recognized_letter_left == 'o' and recognized_letter_right == 'x':

@@ -11,7 +11,6 @@ import mediapipe as mp
 
 from utils import CvFpsCalc
 from model import KeyPointClassifier
-from model import PointHistoryClassifier
 
 
 def get_args():
@@ -104,7 +103,7 @@ def main(cap):
         key = cv.waitKey(10)
         if key == 27:  # ESC
             break
-        number, mode = select_mode(key, mode)
+
 
         # Camera capture
         ret, image = cap.read()
@@ -133,7 +132,6 @@ def main(cap):
 
     cap.release()
     cv.destroyAllWindows()
-
 
 def select_mode(key, mode):
     number = -1
@@ -233,18 +231,25 @@ def pre_process_point_history(image, point_history):
 def logging_csv(number, mode, landmark_list, point_history_list):
     if mode == 0:
         pass
-    if mode == 1 and (0 <= number <= 9):
+    if mode == 1 and (0 <= number <= 38):
         csv_path = 'model/keypoint_classifier/keypoint.csv'
         with open(csv_path, 'a', newline="") as f:
             writer = csv.writer(f)
             writer.writerow([number, *landmark_list])
-    if mode == 2 and (0 <= number <= 9):
-        csv_path = 'model/point_history_classifier/point_history.csv'
-        with open(csv_path, 'a', newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow([number, *point_history_list])
+
     return
 
+
+# def logging_csv_create(number, mode, landmark_list, point_history_list,file_name):
+#     if mode == 0:
+#         pass
+#     if mode == 1:
+#         csv_path = file_name
+#         with open(csv_path, 'a', newline="") as f:
+#             writer = csv.writer(f)
+#             writer.writerow([number, *landmark_list])
+#
+#     return
 
 def draw_landmarks(image, landmark_point):
     if len(landmark_point) > 0:
@@ -455,13 +460,6 @@ def draw_info_text(image, brect, handedness, hand_sign_text,
     return [image, info_text]
 
 
-def draw_point_history(image, point_history):
-    for index, point in enumerate(point_history):
-        if point[0] != 0 and point[1] != 0:
-            cv.circle(image, (point[0], point[1]), 1 + int(index / 2),
-                      (152, 251, 152), 2)
-
-    return image
 
 
 def draw_info(image, fps, mode, number):
